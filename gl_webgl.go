@@ -21,6 +21,7 @@ type RenderBuffer struct{ *js.Object }
 type Program struct{ *js.Object }
 type UniformLocation struct{ *js.Object }
 type Shader struct{ *js.Object }
+type VertexArray struct{ *js.Object }
 
 type ContextAttributes struct {
 	// If Alpha is true, the drawing buffer has an alpha channel for

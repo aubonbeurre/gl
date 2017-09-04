@@ -5,10 +5,11 @@ package gl
 import (
 	"log"
 
-	"golang.org/x/mobile/gl"
 	"image"
 	"reflect"
 	"unsafe"
+
+	"golang.org/x/mobile/gl"
 )
 
 type Texture struct{ gl.Texture }
@@ -18,6 +19,7 @@ type RenderBuffer struct{ gl.Renderbuffer }
 type Program struct{ gl.Program }
 type UniformLocation struct{ gl.Uniform }
 type Shader struct{ gl.Shader }
+type VertexArray struct{ gl.VertexArray }
 
 type Context struct {
 	ctx    gl.Context
@@ -866,6 +868,22 @@ func (c *Context) DeleteProgram(program *Program) {
 	c.ctx.DeleteProgram(program.Program)
 }
 
+func (c *Context) DeleteVertexArray(vao *VertexArray) {
+	c.ctx.DeleteVertexArray(vao.VertexArray)
+}
+
+func (c *Context) CreateVertexArray() *VertexArray {
+	return &VertexArray{c.ctx.CreateVertexArray()}
+}
+
+func (c *Context) BindVertexArray(vao *VertexArray) {
+	if vao == nil {
+		c.ctx.BindVertexArray(gl.VertexArray{0})
+		return
+	}
+	c.ctx.BindVertexArray(vao.VertexArray)
+}
+
 // Deletes the specified renderbuffer object. If the renderbuffer is
 // currently bound, it will become unbound. If the renderbuffer is
 // attached to the currently bound framebuffer, it is detached.
@@ -1041,8 +1059,7 @@ func (c *Context) GetShaderParameter(shader *Shader, pname int) int {
 
 // Returns the value of the parameter associated with pname for a shader object.
 func (c *Context) GetShaderParameterb(shader *Shader, pname int) bool {
-	log.Println("GetShaderParameterb not found on mobile system")
-	return false
+	return c.ctx.GetShaderi(shader.Shader, gl.Enum(pname)) == gl.TRUE
 }
 
 // Returns errors which occur when compiling a shader.

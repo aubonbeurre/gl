@@ -13,7 +13,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/go-gl/gl/v2.1/gl"
+	"github.com/go-gl/gl/v4.1-core/gl"
 )
 
 type Texture struct{ uint32 }
@@ -23,6 +23,7 @@ type RenderBuffer struct{ uint32 }
 type Program struct{ uint32 }
 type UniformLocation struct{ int32 }
 type Shader struct{ uint32 }
+type VertexArray struct{ uint32 }
 
 type Context struct {
 	ARRAY_BUFFER                                 int
@@ -339,7 +340,6 @@ func NewContext() *Context {
 		BLEND_EQUATION_RGB:         gl.BLEND_EQUATION_RGB,
 		BLEND_SRC_ALPHA:            gl.BLEND_SRC_ALPHA,
 		BLEND_SRC_RGB:              gl.BLEND_SRC_RGB,
-		BLUE_BITS:                  gl.BLUE_BITS,
 		BOOL:                       gl.BOOL,
 		BOOL_VEC2:                  gl.BOOL_VEC2,
 		BOOL_VEC3:                  gl.BOOL_VEC3,
@@ -367,7 +367,6 @@ func NewContext() *Context {
 		DECR_WRAP:                    gl.DECR_WRAP,
 		DELETE_STATUS:                gl.DELETE_STATUS,
 		DEPTH_ATTACHMENT:             gl.DEPTH_ATTACHMENT,
-		DEPTH_BITS:                   gl.DEPTH_BITS,
 		DEPTH_BUFFER_BIT:             gl.DEPTH_BUFFER_BIT,
 		DEPTH_CLEAR_VALUE:            gl.DEPTH_CLEAR_VALUE,
 		DEPTH_COMPONENT:              gl.DEPTH_COMPONENT,
@@ -411,10 +410,8 @@ func NewContext() *Context {
 		FUNC_ADD:                      gl.FUNC_ADD,
 		FUNC_REVERSE_SUBTRACT:         gl.FUNC_REVERSE_SUBTRACT,
 		FUNC_SUBTRACT:                 gl.FUNC_SUBTRACT,
-		GENERATE_MIPMAP_HINT:          gl.GENERATE_MIPMAP_HINT,
 		GEQUAL:                        gl.GEQUAL,
 		GREATER:                       gl.GREATER,
-		GREEN_BITS:                    gl.GREEN_BITS,
 		HIGH_FLOAT:                    gl.HIGH_FLOAT,
 		HIGH_INT:                      gl.HIGH_INT,
 		INCR:                          gl.INCR,
@@ -435,15 +432,13 @@ func NewContext() *Context {
 		LINEAR:                        gl.LINEAR,
 		LINEAR_MIPMAP_LINEAR:          gl.LINEAR_MIPMAP_LINEAR,
 		LINEAR_MIPMAP_NEAREST:         gl.LINEAR_MIPMAP_NEAREST,
-		LINES:                            gl.LINES,
-		LINE_LOOP:                        gl.LINE_LOOP,
-		LINE_STRIP:                       gl.LINE_STRIP,
-		LINE_WIDTH:                       gl.LINE_WIDTH,
-		LINK_STATUS:                      gl.LINK_STATUS,
-		LOW_FLOAT:                        gl.LOW_FLOAT,
-		LOW_INT:                          gl.LOW_INT,
-		LUMINANCE:                        gl.LUMINANCE,
-		LUMINANCE_ALPHA:                  gl.LUMINANCE_ALPHA,
+		LINES:       gl.LINES,
+		LINE_LOOP:   gl.LINE_LOOP,
+		LINE_STRIP:  gl.LINE_STRIP,
+		LINE_WIDTH:  gl.LINE_WIDTH,
+		LINK_STATUS: gl.LINK_STATUS,
+		LOW_FLOAT:   gl.LOW_FLOAT,
+		LOW_INT:     gl.LOW_INT,
 		MAX_COMBINED_TEXTURE_IMAGE_UNITS: gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS,
 		MAX_CUBE_MAP_TEXTURE_SIZE:        gl.MAX_CUBE_MAP_TEXTURE_SIZE,
 		MAX_FRAGMENT_UNIFORM_VECTORS:     gl.MAX_FRAGMENT_UNIFORM_VECTORS,
@@ -481,7 +476,6 @@ func NewContext() *Context {
 		POLYGON_OFFSET_FACTOR:        gl.POLYGON_OFFSET_FACTOR,
 		POLYGON_OFFSET_FILL:          gl.POLYGON_OFFSET_FILL,
 		POLYGON_OFFSET_UNITS:         gl.POLYGON_OFFSET_UNITS,
-		RED_BITS:                     gl.RED_BITS,
 		RENDERBUFFER:                 gl.RENDERBUFFER,
 		RENDERBUFFER_ALPHA_SIZE:      gl.RENDERBUFFER_ALPHA_SIZE,
 		RENDERBUFFER_BINDING:         gl.RENDERBUFFER_BINDING,
@@ -528,7 +522,6 @@ func NewContext() *Context {
 		STENCIL_BACK_REF:             gl.STENCIL_BACK_REF,
 		STENCIL_BACK_VALUE_MASK:      gl.STENCIL_BACK_VALUE_MASK,
 		STENCIL_BACK_WRITEMASK:       gl.STENCIL_BACK_WRITEMASK,
-		STENCIL_BITS:                 gl.STENCIL_BITS,
 		STENCIL_BUFFER_BIT:           gl.STENCIL_BUFFER_BIT,
 		STENCIL_CLEAR_VALUE:          gl.STENCIL_CLEAR_VALUE,
 		STENCIL_FAIL:                 gl.STENCIL_FAIL,
@@ -662,6 +655,33 @@ func (c *Context) DeleteTexture(texture *Texture) {
 	gl.DeleteTextures(1, &[]uint32{texture.uint32}[0])
 }
 
+// Delete a specific buffer.
+func (c *Context) DeleteBuffer(buffer *Buffer) {
+	gl.DeleteBuffers(1, &[]uint32{buffer.uint32}[0])
+}
+
+func (c *Context) DeleteProgram(program *Program) {
+	gl.DeleteProgram(program.uint32)
+}
+
+func (c *Context) DeleteVertexArray(vao *VertexArray) {
+	gl.DeleteVertexArrays(1, &[]uint32{vao.uint32}[0])
+}
+
+func (c *Context) CreateVertexArray() *VertexArray {
+	var loc uint32
+	gl.GenVertexArrays(1, &loc)
+	return &VertexArray{loc}
+}
+
+func (c *Context) BindVertexArray(vao *VertexArray) {
+	if vao == nil {
+		gl.BindVertexArray(0)
+		return
+	}
+	gl.BindVertexArray(vao.uint32)
+}
+
 // Returns a parameter from a shader object
 func (c *Context) GetShaderiv(shader *Shader, pname uint32) bool {
 	var success int32
@@ -688,12 +708,45 @@ func (c *Context) AttachShader(program *Program, shader *Shader) {
 	gl.AttachShader(program.uint32, shader.uint32)
 }
 
+// Binds a generic vertex index to a user-defined attribute variable.
+func (c *Context) BindAttribLocation(program *Program, index int, name string) {
+	gl.BindAttribLocation(program.uint32, uint32(index), gl.Str(name+"\x00"))
+}
+
 func (c *Context) LineWidth(width float32) {
 	gl.LineWidth(width)
 }
 
 func (c *Context) LinkProgram(program *Program) {
 	gl.LinkProgram(program.uint32)
+}
+
+// Returns the value of the program parameter that corresponds to a supplied pname
+// which is interpreted as an int.
+func (c *Context) GetProgramParameteri(program *Program, pname int) int {
+	var success int32 = gl.FALSE
+	gl.GetProgramiv(program.uint32, uint32(pname), &success)
+	return int(success)
+}
+
+// Returns the value of the program parameter that corresponds to a supplied pname
+// which is interpreted as a bool.
+func (c *Context) GetProgramParameterb(program *Program, pname int) bool {
+	var success int32 = gl.FALSE
+	gl.GetProgramiv(program.uint32, uint32(pname), &success)
+	return success == gl.TRUE
+}
+
+// Returns information about the last error that occurred during
+// the failed linking or validation of a WebGL program object.
+func (c *Context) GetProgramInfoLog(program *Program) string {
+	var maxLength int32
+	gl.GetProgramiv(program.uint32, gl.INFO_LOG_LENGTH, &maxLength)
+
+	errorLog := make([]byte, maxLength)
+	gl.GetProgramInfoLog(program.uint32, maxLength, &maxLength, (*uint8)(gl.Ptr(errorLog)))
+
+	return string(errorLog)
 }
 
 func (c *Context) CreateTexture() *Texture {
@@ -793,6 +846,10 @@ func (c *Context) BlendFunc(src, dst int) {
 	gl.BlendFunc(uint32(src), uint32(dst))
 }
 
+func (c *Context) BlendEquation(mode int) {
+	gl.BlendEquation(uint32(mode))
+}
+
 func (c *Context) UniformMatrix2fv(location *UniformLocation, transpose bool, value []float32) {
 	// TODO: count value of 1 is currently hardcoded.
 	//       Perhaps it should be len(value) / 16 or something else?
@@ -836,6 +893,11 @@ func (c *Context) ValidateProgram(program *Program) {
 // Specify the value of a uniform variable for the current program object
 func (c *Context) Uniform1f(location *UniformLocation, x float32) {
 	gl.Uniform1f(location.int32, x)
+}
+
+// Assigns a integer value to a uniform variable for the current program object.
+func (c *Context) Uniform1i(location *UniformLocation, x int) {
+	gl.Uniform1i(location.int32, int32(x))
 }
 
 func (c *Context) Uniform2f(location *UniformLocation, x, y float32) {
@@ -883,20 +945,4 @@ func (c *Context) Scissor(x, y, width, height int) {
 
 func (c *Context) Clear(flags int) {
 	gl.Clear(uint32(flags))
-}
-
-func (c *Context) MatrixMode(mode uint32) {
-	gl.MatrixMode(mode)
-}
-
-func (c *Context) LoadIdentity() {
-	gl.LoadIdentity()
-}
-
-func (c *Context) PushMatrix() {
-	gl.PushMatrix()
-}
-
-func (c *Context) PopMatrix() {
-	gl.PopMatrix()
 }
