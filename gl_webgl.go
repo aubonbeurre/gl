@@ -373,7 +373,7 @@ func NewContext(canvas *js.Object, ca *ContextAttributes) (*Context, error) {
 		"premultipliedAlpha":    ca.PremultipliedAlpha,
 		"preserveDrawingBuffer": ca.PreserveDrawingBuffer,
 	}
-	gl := canvas.Call("getContext", "webgl", attrs)
+	gl := canvas.Call("getContext", "webgl2", attrs)
 	if gl == nil {
 		gl = canvas.Call("getContext", "experimental-webgl", attrs)
 		if gl == nil {
@@ -505,6 +505,14 @@ func (c *Context) BindTexture(target int, texture *Texture) {
 	c.Call("bindTexture", target, texture.Object)
 }
 
+func (c *Context) BindVertexArray(va *VertexArray) {
+	if va == nil {
+		c.Call("bindVertexArray", nil)
+		return
+	}
+	c.Call("bindVertexArray", va.Object)
+}
+
 // Creates a buffer in memory and initializes it with array data.
 // If no array is provided, the contents of the buffer is initialized to 0.
 func (c *Context) BufferData(target int, data interface{}, usage int) {
@@ -599,6 +607,10 @@ func (c *Context) CreateTexture() *Texture {
 	return &Texture{c.Call("createTexture")}
 }
 
+func (c *Context) CreateVertexArray() *VertexArray {
+	return &VertexArray{c.Call("createVertexArray")}
+}
+
 // Sets whether or not front, back, or both facing facets are able to be culled.
 func (c *Context) CullFace(mode int) {
 	c.Call("cullFace", mode)
@@ -639,6 +651,10 @@ func (c *Context) DeleteShader(shader *Shader) {
 // Deletes a specific texture object.
 func (c *Context) DeleteTexture(texture *Texture) {
 	c.Call("deleteTexture", texture.Object)
+}
+
+func (c *Context) DeleteVertexArray(va *VertexArray) {
+	c.Call("deleteVertexArray", va.Object)
 }
 
 // Sets whether or not you can write to the depth buffer.
@@ -1053,7 +1069,11 @@ func (c *Context) UniformMatrix4fv(location *UniformLocation, transpose bool, va
 
 // Set the program object to use for rendering.
 func (c *Context) UseProgram(program *Program) {
-	c.Call("useProgram", *program.Object) // TODO: pointer vs non-pointer
+	if program == nil {
+		c.Call("useProgram", nil)
+		return
+	}
+	c.Call("useProgram", *program.Object)
 }
 
 // Returns whether a given program can run in the current WebGL state.
